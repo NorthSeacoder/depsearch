@@ -1,8 +1,3 @@
-import { defineExtension } from 'reactive-vscode'
-import { window } from 'vscode'
-
-const { activate, deactivate } = defineExtension(() => {
-  window.showInformationMessage('Hello')
-})
+import { activate, deactivate } from './extension'
 
 export { activate, deactivate }

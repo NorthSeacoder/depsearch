@@ -16,5 +16,5 @@ export default defineConfig({
   external: [
     'vscode',
   ],
-  noExternal: [],
+  noExternal: ['@nsea/depseeker'],
 })
