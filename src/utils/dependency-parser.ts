@@ -3,21 +3,17 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '.';
 import depseeker from '@nsea/depseeker'
-interface DependencyNode {
-    filePath: string;
-    dependencies: DependencyNode[];
-    level: number;
-}
+import { type DepSeeker } from '@nsea/depseeker';
 
 export default class DependencyParser {
     private maxDepth: number = 5;
-    private cache: Map<string, DependencyNode> = new Map();
+    private cache: Map<string, DepSeeker> = new Map();
 
     constructor(maxDepth: number = 5) {
         this.maxDepth = maxDepth;
     }
 
-    async parseDependencies(uri: Uri, level: number = 0): Promise<DependencyNode> {
+    async parseDependencies(uri: Uri, level: number = 0): Promise<DepSeeker> {
         const filePath = uri.fsPath;
         // 检查缓存
         if (this.cache.has(filePath)) {
@@ -45,7 +41,7 @@ export default class DependencyParser {
         logger.info('obj', JSON.stringify(result.obj()));
         logger.info('getFiles', result.getFiles());
         // 解析路径别名（基于 tsconfig.json）
-        return {} as any;
+        return result
     }
 
     async findTsconfig(filePath:string): Promise<string> {

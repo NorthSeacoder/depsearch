@@ -11,6 +11,9 @@ importers:
       '@nsea/depseeker':
         specifier: 0.0.3
         version: 0.0.3
+      '@vscode/ripgrep':
+        specifier: ^1.15.11
+        version: 1.15.11
     devDependencies:
       '@antfu/eslint-config':
         specifier: ^4.2.1
@@ -1021,6 +1024,9 @@ packages:
 
   '@vitest/utils@1.6.1':
     resolution: {integrity: sha512-jOrrUvXM4Av9ZWiG1EajNto0u96kWAhJ1LmPmJhXXQx/32MecEKd10pOLYgS2BQx1TgkGhloPU1ArDW2vvaY6g==}
+
+  '@vscode/ripgrep@1.15.11':
+    resolution: {integrity: sha512-G/VqtA6kR50mJkIH4WA+I2Q78V5blovgPPq0VPYM0QIRp57lYMkdV+U9VrY80b3AvaC72A1z8STmyxc8ZKiTsw==}
 
   '@vscode/vsce-sign-alpine-arm64@2.0.2':
     resolution: {integrity: sha512-E80YvqhtZCLUv3YAf9+tIbbqoinWLCO/B3j03yQPbjT3ZIHCliKZlsy1peNc4XNZ5uIb87Jn0HWx/ZbPXviuAQ==}
@@ -2806,6 +2812,9 @@ packages:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
     engines: {node: '>= 6'}
 
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
   pump@3.0.0:
     resolution: {integrity: sha512-LwZy+p3SFs1Pytd/jYct4wpv49HiYCqd9Rlc5ZVdk0V+8Yzv6jR5Blk3TRmPL1ft69TxP0IMZGJ+WPFU2BFhww==}
 
@@ -4296,6 +4305,14 @@ snapshots:
       estree-walker: 3.0.3
       loupe: 2.3.7
       pretty-format: 29.7.0
+
+  '@vscode/ripgrep@1.15.11':
+    dependencies:
+      https-proxy-agent: 7.0.2
+      proxy-from-env: 1.1.0
+      yauzl: 2.10.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@vscode/vsce-sign-alpine-arm64@2.0.2':
     optional: true
@@ -6455,6 +6472,8 @@ snapshots:
     dependencies:
       kleur: 3.0.3
       sisteransi: 1.0.5
+
+  proxy-from-env@1.1.0: {}
 
   pump@3.0.0:
     dependencies:

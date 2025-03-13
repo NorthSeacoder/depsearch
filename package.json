@@ -155,6 +155,7 @@
         }
     },
     "dependencies": {
-        "@nsea/depseeker": "0.0.3"
+        "@nsea/depseeker": "0.0.3",
+        "@vscode/ripgrep": "^1.15.11"
     }
 }
