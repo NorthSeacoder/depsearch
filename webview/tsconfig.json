@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "lib": ["esnext"],
+    "lib": ["esnext", "DOM"],
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
@@ -9,8 +9,8 @@
     "strictNullChecks": true,
     "esModuleInterop": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["vscode-webview"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist","webview"]
+  "include": ["src/**/*"]
 }

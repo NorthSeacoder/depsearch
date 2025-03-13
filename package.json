@@ -24,7 +24,8 @@
     "files": [
         "LICENSE.md",
         "dist/*",
-        "res/*"
+        "res/*",
+        "webview/dist/*"
     ],
     "engines": {
         "vscode": "^1.97.0"
@@ -118,8 +119,9 @@
     "scripts": {
         "cz": "git add . && git-cz",
         "clear": "rimraf dist",
-        "build": "nr clear && env NODE_ENV=production tsup",
-        "dev": "env NODE_ENV=development nr build",
+        "build": "nr clear && concurrently \"env NODE_ENV=production tsup\" \"nr -F view build\"",
+        "build:view": "nr -F view build",
+        "dev": "concurrently \"env NODE_ENV=development nr build --watch\" \"nr -F view build --watch\"",
         "prepare": "nr update",
         "update": "vscode-ext-gen --output src/generated/meta.ts",
         "lint": "eslint . --fix",
@@ -138,6 +140,7 @@
         "@vscode/vsce": "^3.2.2",
         "bumpp": "^10.0.3",
         "commitizen": "^4.3.1",
+        "concurrently": "^9.1.2",
         "cz-conventional-changelog": "^3.3.0",
         "eslint": "^9.20.1",
         "esno": "^4.8.0",

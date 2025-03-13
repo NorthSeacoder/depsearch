@@ -1,9 +1,13 @@
-import type {Uri, ExtensionContext, TreeItem} from 'vscode';
+import type {Uri, TreeItem} from 'vscode';
+import  {window} from 'vscode';
 import {defineExtension, useCommands, executeCommand} from 'reactive-vscode';
 import {displayName} from './generated/meta';
 import {logger, getRelativePath} from './utils';
 import DependencyParser from './utils/dependency-parser';
 import {searchInFilesWithRipgrep} from './utils/search';
+import { SvelteViewProvider } from './panel';
+import { WEBVIEW_VIEW_ID } from './constants';
+
 // 定义树节点类型
 interface DepsearchTreeNode {
     id: string;
@@ -12,8 +16,14 @@ interface DepsearchTreeNode {
     treeItem: TreeItem;
 }
 
-export const {activate, deactivate} = defineExtension(() => {
+export const {activate, deactivate} = defineExtension((context) => {
     executeCommand('setContext', 'depsearch.supportedExts', ['.js', '.ts', '.jsx', '.tsx']);
+
+    const provider = new SvelteViewProvider(context.extensionUri);
+    context.subscriptions.push(
+      window.registerWebviewViewProvider(WEBVIEW_VIEW_ID, provider)
+    );
+
     // 创建依赖解析器
     const parser = new DependencyParser();
 
