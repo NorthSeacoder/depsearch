@@ -16,7 +16,9 @@ export class SvelteViewProvider implements WebviewViewProvider {
     this.view = webviewView;
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [Uri.joinPath(this.extensionUri, WEBVIEW_DIST_PATH)],
+      localResourceRoots: [
+        Uri.joinPath(this.extensionUri, WEBVIEW_DIST_PATH)
+      ],
     };
     webviewView.webview.html = this.getWebviewContent(webviewView.webview);
     this.setWebviewMessageListener(webviewView.webview);

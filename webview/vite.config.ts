@@ -21,6 +21,7 @@ export default defineConfig({
         assetFileNames: 'index.css',
       },
     },
+    cssCodeSplit: false,
   },
   esbuild: {
     tsconfigRaw: require('./tsconfig.json'),

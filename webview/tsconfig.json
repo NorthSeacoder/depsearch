@@ -10,7 +10,8 @@
     "esModuleInterop": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
-    "types": ["vscode-webview"]
+    "types": ["vscode-webview","svelte"],
+    "baseUrl": "."
   },
   "include": ["src/**/*"]
 }
