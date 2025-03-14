@@ -13,6 +13,8 @@
   --vscode-list-activeSelectionForeground: var(--vscode-list-activeSelectionForeground, #ffffff);
   --vscode-panel-border: var(--vscode-panel-border, #80808059);
   --vscode-descriptionForeground: var(--vscode-descriptionForeground, #ccccccb3);
+  --vscode-editor-findMatchHighlightBackground: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+  --vscode-editor-findMatchBackground: var(--vscode-editor-findMatchBackground, rgba(234, 92, 0, 0.5));
 }
 /* 基础样式 */
 body {
@@ -36,8 +38,73 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
 .mt-2 {
   margin-top: 0.5rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.ml-1 {
+  margin-left: 0.25rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.ml-4 {
+  margin-left: 1rem;
+}
+.ml-6 {
+  margin-left: 1.5rem;
+}
+
+.mr-1 {
+  margin-right: 0.25rem;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mr-3 {
+  margin-right: 0.75rem;
+}
+
+.pl-2 {
+  padding-left: 0.5rem;
+}
+
+.pl-4 {
+  padding-left: 1rem;
+}
+
+.pl-6 {
+  padding-left: 1.5rem;
+}
+
+.pr-2 {
+  padding-right: 0.5rem;
+}
+
+.pr-24 {
+  padding-right: 6rem;
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.py-2px {
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .space-y-2 > * + * {
@@ -50,6 +117,73 @@ body {
 
 .w-full {
   width: 100%;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
+.w-8 {
+  width: 2rem;
+}
+
+.h-8 {
+  height: 2rem;
+}
+
+/* 匹配文本样式 */
+.match-text {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+/* 文件名样式 */
+.filename-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-header {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.file-name {
+  font-weight: medium;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+
+.file-directory {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-matches {
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.match-highlight {
+  background-color: var(--vscode-editor-findMatchHighlightBackground);
+  border-radius: 2px;
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+
+.match-exact {
+  background-color: var(--vscode-editor-findMatchBackground);
+  border-radius: 2px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  font-weight: bold;
 }
 
 .relative {
@@ -80,12 +214,28 @@ body {
   display: flex;
 }
 
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 .items-center {
   align-items: center;
 }
 
 .items-start {
   align-items: flex-start;
+}
+
+.items-baseline {
+  align-items: baseline;
 }
 
 .justify-between {
@@ -98,6 +248,30 @@ body {
 
 .gap-1 {
   gap: 0.25rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.min-w-3ch {
+  min-width: 3ch;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.hover-bg-vscode-list-hover:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 /* 输入框 */
@@ -116,14 +290,6 @@ body {
 .vscode-input:focus {
   border-color: var(--vscode-button-background);
   outline: none;
-}
-
-.pl-9 {
-  padding-left: 2.25rem;
-}
-
-.pr-24 {
-  padding-right: 6rem;
 }
 
 .text-sm {
@@ -178,42 +344,22 @@ button:hover {
   font-size: 1.125rem;
 }
 
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.text-xs {
-  font-size: 0.75rem;
-}
-
 .font-medium {
   font-weight: 500;
+}
+
+.font-mono {
+  font-family: monospace;
 }
 
 .text-vscode-description {
   color: var(--vscode-descriptionForeground);
 }
 
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
 /* 加载动画 */
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
-}
-
-.w-8 {
-  width: 2rem;
-}
-
-.h-8 {
-  height: 2rem;
 }
 
 .border-4 {
@@ -242,8 +388,26 @@ button:hover {
   }
 }
 
-.text-center {
-  text-align: center;
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.break-all {
+  word-break: break-all;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block {
+  display: block;
 }
 
 /* 其他 */

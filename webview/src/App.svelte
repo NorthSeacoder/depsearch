@@ -1,16 +1,15 @@
 <script lang="ts">
-  import './app.css';
   import { onMount } from 'svelte';
   import { 
     type ImportSearchResult, 
     type FileGroup, 
     processImportResults, 
-    getRelativePath
   } from './importData';
   import { mockFullImportResults } from './mockData';
-  import SearchIcon from './icons/SearchIcon.svelte';
   import CaseSensitiveIcon from './icons/CaseSensitiveIcon.svelte';
   import WholeWordIcon from './icons/WholeWordIcon.svelte';
+  import ChevronDownIcon from './icons/ChevronDownIcon.svelte';
+  import ChevronRightIcon from './icons/ChevronRightIcon.svelte';
   
   // 类型定义
   interface VSCodeMessage {
@@ -32,7 +31,6 @@
   let isCaseSensitive = false;
   let isWholeWord = false;
   let includeFiles = '';
-  let excludeFiles = '';
 
   // 文件组展开状态
   let expandedFiles: Record<string, boolean> = {};
@@ -116,6 +114,52 @@
       handleSearch();
     }
   }
+  
+  // 将文本分割为匹配和非匹配部分
+  function splitTextByMatch(text: string, query: string): { text: string; isMatch: boolean }[] {
+    if (!query || !text) return [{ text, isMatch: false }];
+    
+    try {
+      // 转义正则表达式特殊字符
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedQuery})`, 'gi');
+      
+      const parts: { text: string; isMatch: boolean }[] = [];
+      let lastIndex = 0;
+      let match;
+      
+      while ((match = regex.exec(text)) !== null) {
+        // 添加匹配前的文本
+        if (match.index > lastIndex) {
+          parts.push({
+            text: text.substring(lastIndex, match.index),
+            isMatch: false
+          });
+        }
+        
+        // 添加匹配的文本
+        parts.push({
+          text: match[0],
+          isMatch: true
+        });
+        
+        lastIndex = regex.lastIndex;
+      }
+      
+      // 添加最后一部分
+      if (lastIndex < text.length) {
+        parts.push({
+          text: text.substring(lastIndex),
+          isMatch: false
+        });
+      }
+      
+      return parts;
+    } catch (error) {
+      console.error('分割匹配文本时出错:', error);
+      return [{ text, isMatch: false }];
+    }
+  }
 </script>
 
 <div class="container text-vscode-foreground">
@@ -154,7 +198,7 @@
     <!-- 文件过滤 -->
     <div class="mt-2 space-y-2">
       <div class="relative">
-        <label for="include-files" class="block text-xs mb-1">包含的文件:</label>
+        <label for="include-files" class="block text-xs mb-1">起始文件:</label>
         <input 
           id="include-files"
           type="text" 
@@ -163,7 +207,7 @@
           bind:value={includeFiles}
         />
       </div>
-      <div class="relative">
+      <!-- <div class="relative">
         <label for="exclude-files" class="block text-xs mb-1">排除的文件:</label>
         <input 
           id="exclude-files"
@@ -172,12 +216,12 @@
           placeholder="例如: node_modules/**" 
           bind:value={excludeFiles}
         />
-      </div>
+      </div> -->
     </div>
   </div>
 
   <!-- 导入视图 -->
-  <div class="space-y-3">
+  <div class="space-y-2 pl-2">
     {#if isSearching}
       <div class="flex justify-center py-8">
         <div class="w-8 h-8 border-4 border-vscode-button-bg border-t-transparent rounded-full animate-spin"></div>
@@ -185,47 +229,49 @@
     {:else if fileGroups.length === 0}
       <p class="text-center py-8 text-vscode-description">无搜索结果或尚未搜索</p>
     {:else}
-      <div class="text-sm mb-2">
+      <div class="text-xs mb-2 text-vscode-description">
         找到 {totalMatches} 个匹配项，位于 {totalFiles} 个文件中
       </div>
       
       {#each fileGroups as group}
-        <div class="border border-vscode-border rounded">
+        <div class="mb-2">
           <!-- 文件头部 -->
           <div 
-            class="p-2 flex justify-between items-center cursor-pointer hover:bg-vscode-list-hover"
+            class="flex items-center cursor-pointer hover-bg-vscode-list-hover py-2px"
             on:click={() => toggleFileGroup(group.filePath)}
             role="button"
             tabindex="0"
             on:keydown={(e) => e.key === 'Enter' && toggleFileGroup(group.filePath)}
           >
-            <div>
-              <span class="font-medium">{group.fileName}</span>
-              <span class="text-vscode-description text-sm ml-2">{group.directory}</span>
+            <div class="w-4 text-center flex-shrink-0 mr-2">
+              {#if expandedFiles[group.filePath]}
+                <ChevronDownIcon size={14} />
+              {:else}
+                <ChevronRightIcon size={14} />
+              {/if}
             </div>
-            <div class="text-sm">
-              {group.matches.length} 个匹配项
+            <div class="flex-1 overflow-hidden">
+              <div class="file-header">
+                <span class="text-xs file-name">{group.fileName}</span>
+                <span class="text-xs text-vscode-description file-directory">{group.directory}</span>
+                <span class="text-xs text-vscode-description file-matches">({group.matches.length} 个匹配项)</span>
+              </div>
             </div>
           </div>
           
           <!-- 匹配项列表 -->
           {#if expandedFiles[group.filePath]}
-            <div class="border-t border-vscode-border">
+            <div class="ml-6">
               {#each group.matches as match}
                 <div 
-                  class="p-2 hover:bg-vscode-list-hover cursor-pointer border-t border-vscode-border first:border-t-0"
+                  class="flex items-start cursor-pointer hover-bg-vscode-list-hover py-2px"
                   on:click={() => openFile(match.filePath, match.lineNumber)}
                   role="button"
                   tabindex="0"
                   on:keydown={(e) => e.key === 'Enter' && openFile(match.filePath, match.lineNumber)}
                 >
-                  <div class="flex items-start">
-                    <div class="text-sm text-vscode-description mr-2">
-                      {match.lineNumber}:
-                    </div>
-                    <div class="text-sm overflow-hidden">
-                      <pre class="whitespace-pre-wrap break-all">{match.matchText}</pre>
-                    </div>
+                  <div class="flex-1 overflow-hidden">
+                    <pre class="text-xs match-text">{#each splitTextByMatch(match.matchText, searchQuery) as part}{#if part.isMatch}<span class="match-highlight">{part.text}</span>{:else}{part.text}{/if}{/each}</pre>
                   </div>
                 </div>
               {/each}
@@ -259,15 +305,6 @@
     to { transform: rotate(360deg); }
   }
 
-  /* 添加一些额外的样式，确保 hover 效果正常工作 */
-  :global(.hover\:bg-vscode-list-hover:hover) {
-    background-color: var(--vscode-list-hoverBackground);
-  }
-  
-  :global(.first\:border-t-0:first-child) {
-    border-top-width: 0;
-  }
-  
   /* 图标按钮样式 */
   .icon-button {
     display: flex;
