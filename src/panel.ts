@@ -23,11 +23,6 @@ export class SvelteViewProvider implements WebviewViewProvider {
     webviewView.webview.html = this.getWebviewContent(webviewView.webview);
     this.setWebviewMessageListener(webviewView.webview);
 
-    webviewView.onDidChangeVisibility(() => {
-      if (webviewView.visible) {
-        this.postGreeting();
-      }
-    });
   }
 
   public post(content: Payload) {
@@ -39,15 +34,7 @@ export class SvelteViewProvider implements WebviewViewProvider {
   public show() {
     if (this.view) {
       this.view.show();
-      this.postGreeting();
     }
-  }
-
-  private postGreeting() {
-    const greeting = vscode.workspace
-      .getConfiguration(EXTENSION_SCOPE)
-      .get<string>('greetingMessage', '您好，这是从扩展发送的消息！');
-    this.post({ title: 'greeting', msg: greeting });
   }
 
   private getWebviewContent(webview: Webview) {
@@ -74,14 +61,78 @@ export class SvelteViewProvider implements WebviewViewProvider {
   }
 
   private setWebviewMessageListener(webview: Webview) {
-    webview.onDidReceiveMessage((message: Payload) => {
-      if (!message || typeof message.title !== 'string' || typeof message.msg !== 'string') {
+    webview.onDidReceiveMessage(async (message: Payload) => {
+      if (!message || typeof message.title !== 'string') {
         vscode.window.showErrorMessage('接收到的消息格式无效');
         return;
       }
+      
       switch (message.title) {
-        case 'hello':
-          vscode.window.showInformationMessage(message.msg);
+        case 'search':
+          // 执行搜索
+          if (message.entryFile && message.query) {
+            try {
+              // 创建 URI
+              const uri = vscode.Uri.file(message.entryFile);
+              
+              // 调用搜索命令
+              await vscode.commands.executeCommand('depsearch.search', {
+                uri,
+                query: message.query,
+                isCaseSensitive: message.isCaseSensitive || false,
+                isWholeWord: message.isWholeWord || false
+              });
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : '搜索执行失败';
+              vscode.window.showErrorMessage(errorMessage);
+              this.post({
+                title: 'searchError',
+                msg: errorMessage
+              });
+            }
+          } else {
+            const errorMsg = !message.entryFile 
+              ? '请先选择一个入口文件' 
+              : '请输入搜索关键词';
+            
+            vscode.window.showWarningMessage(errorMsg);
+            this.post({
+              title: 'searchError',
+              msg: errorMsg
+            });
+          }
+          break;
+          
+        case 'openFile':
+          // 打开文件
+          if (message.filePath && typeof message.lineNumber === 'number') {
+            try {
+              const uri = vscode.Uri.file(message.filePath);
+              const document = await vscode.workspace.openTextDocument(uri);
+              
+              // 打开文档并跳转到指定行
+              const editor = await vscode.window.showTextDocument(document);
+              
+              // 行号从 1 开始，需要减 1 转为 0 开始
+              const lineNumber = Math.max(0, message.lineNumber - 1);
+              const line = document.lineAt(lineNumber);
+              
+              // 选择整行
+              editor.selection = new vscode.Selection(
+                lineNumber, 0,
+                lineNumber, line.text.length
+              );
+              
+              // 滚动到可见区域
+              editor.revealRange(
+                new vscode.Range(lineNumber, 0, lineNumber, 0),
+                vscode.TextEditorRevealType.InCenter
+              );
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : '无法打开文件';
+              vscode.window.showErrorMessage(`打开文件失败: ${errorMessage}`);
+            }
+          }
           break;
       }
     });

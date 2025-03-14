@@ -61,57 +61,18 @@
                 "icon": "$(search)"
             },
             {
-                "command": "depsearch.openFile",
-                "title": "Open File",
-                "category": "DepSearch"
-            },
-            {
-                "command": "depsearch.replace",
-                "title": "Replace in Dependencies",
-                "category": "DepSearch"
-            },
-            {
-                "command": "depsearch.toggleReplace",
-                "title": "Toggle Replace",
+                "command": "depsearch.openWebview",
+                "title": "DepSearch: 分析依赖",
                 "category": "DepSearch",
-                "icon": "$(replace)"
-            },
-            {
-                "command": "depsearch.selectFile",
-                "title": "Select File",
-                "category": "DepSearch"
+                "icon": "$(references)"
             }
         ],
         "menus": {
-            "view/title": [
-                {
-                    "command": "depsearch.selectFile",
-                    "when": "view == depsearchView",
-                    "group": "navigation"
-                },
-                {
-                    "command": "depsearch.search",
-                    "when": "view == depsearchView",
-                    "group": "navigation"
-                },
-                {
-                    "command": "depsearch.toggleReplace",
-                    "when": "view == depsearchConfigView",
-                    "group": "navigation"
-                }
-            ],
             "explorer/context": [
                 {
-                    "command": "depsearch.search",
+                    "command": "depsearch.openWebview",
                     "group": "navigation",
                     "when": "explorerResourceIsFolder || resourceExtname in depsearch.supportedExts"
-                }
-            ],
-            "editor/context": [
-                {
-                    "command": "depsearch.search",
-                    "group": "search",
-                    "when": "resourceLangId =~ /(javascript|typescript|javascriptreact|typescriptreact)/"
                 }
             ]
         }

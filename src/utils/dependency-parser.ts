@@ -38,8 +38,7 @@ export default class DependencyParser {
           const result = await depseeker(filePath, options)
         // 提取 import/require 语句
         logger.info('baseDir', path.dirname(tsConfig));
-        logger.info('obj', JSON.stringify(result.obj()));
-        logger.info('getFiles', result.getFiles());
+        logger.info('getFiles', result.getFiles().length);
         // 解析路径别名（基于 tsconfig.json）
         return result
     }

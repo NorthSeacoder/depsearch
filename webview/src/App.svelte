@@ -5,7 +5,6 @@
     type FileGroup, 
     processImportResults, 
   } from './importData';
-  import { mockFullImportResults } from './mockData';
   import CaseSensitiveIcon from './icons/CaseSensitiveIcon.svelte';
   import WholeWordIcon from './icons/WholeWordIcon.svelte';
   import ChevronDownIcon from './icons/ChevronDownIcon.svelte';
@@ -16,6 +15,7 @@
     title: string;
     importResults?: ImportSearchResult[];
     msg?: string;
+    entryFile?: string;
   }
 
   // 获取 VS Code API
@@ -30,7 +30,8 @@
   let totalFiles = 0;
   let isCaseSensitive = false;
   let isWholeWord = false;
-  let includeFiles = '';
+  let entryFile = '';
+  let searchTimeout: number | null = null;
 
   // 文件组展开状态
   let expandedFiles: Record<string, boolean> = {};
@@ -39,24 +40,39 @@
   onMount(() => {
     window.addEventListener('message', (event: MessageEvent) => {
       const message = event.data as VSCodeMessage;
-      if (message.title === 'greeting') {
-        vscode.postMessage({
-          title: 'hello',
-          msg: 'Webview 已收到您的问候！'
-        });
-      } else if (message.title === 'importResults' && message.importResults) {
-        importResults = message.importResults;
-        processImportResultsData();
-        isSearching = false;
+      
+      switch (message.title) {
+        case 'greeting':
+          vscode.postMessage({
+            title: 'hello',
+            msg: 'Webview 已收到您的问候！'
+          });
+          break;
+          
+        case 'importResults':
+          if (message.importResults) {
+            importResults = message.importResults;
+            processImportResultsData();
+            isSearching = false;
+          }
+          break;
+          
+        case 'searchError':
+          isSearching = false;
+          // 可以在界面上显示错误消息
+          break;
+          
+        case 'setEntryFile':
+          if (message.entryFile) {
+            entryFile = message.entryFile;
+            // 如果已有搜索关键词，则自动触发搜索
+            if (searchQuery.trim()) {
+              handleSearch();
+            }
+          }
+          break;
       }
     });
-    
-    // 模拟初始数据
-    setTimeout(() => {
-      // 模拟导入搜索结果
-      importResults = mockFullImportResults;
-      processImportResultsData();
-    }, 500);
   });
   
   // 处理导入搜索结果
@@ -74,23 +90,28 @@
   
   // 发送搜索请求到扩展
   function handleSearch() {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !entryFile) return;
     
     isSearching = true;
     vscode.postMessage({
       title: 'search',
-      query: searchQuery
+      query: searchQuery,
+      entryFile: entryFile,
+      isCaseSensitive,
+      isWholeWord
     });
+  }
+  
+  // 防抖处理搜索
+  function debounceSearch() {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
     
-    // 模拟搜索结果，实际应用中应该由扩展返回
-    setTimeout(() => {
-      if (isSearching) {
-        // 模拟导入搜索结果
-        importResults = mockFullImportResults;
-        processImportResultsData();
-        isSearching = false;
-      }
-    }, 1000);
+    searchTimeout = setTimeout(() => {
+      handleSearch();
+      searchTimeout = null;
+    }, 500) as unknown as number;
   }
   
   // 切换文件组展开状态
@@ -112,6 +133,20 @@
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Enter') {
       handleSearch();
+    }
+  }
+  
+  // 处理搜索输入变化
+  function handleSearchInputChange() {
+    if (searchQuery.trim() && entryFile) {
+      debounceSearch();
+    }
+  }
+  
+  // 处理入口文件变化
+  function handleEntryFileChange() {
+    if (searchQuery.trim() && entryFile) {
+      debounceSearch();
     }
   }
   
@@ -173,13 +208,19 @@
           placeholder="搜索" 
           bind:value={searchQuery}
           on:keydown={handleKeyDown}
+          on:input={handleSearchInputChange}
         />
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
           <button
             class="icon-button"
             aria-label="区分大小写"
             title="区分大小写"
-            on:click={() => isCaseSensitive = !isCaseSensitive}
+            on:click={() => {
+              isCaseSensitive = !isCaseSensitive;
+              if (searchQuery.trim() && entryFile) {
+                debounceSearch();
+              }
+            }}
           >
             <CaseSensitiveIcon active={isCaseSensitive} />
           </button>
@@ -187,7 +228,12 @@
             class="icon-button"
             aria-label="全字匹配"
             title="全字匹配"
-            on:click={() => isWholeWord = !isWholeWord}
+            on:click={() => {
+              isWholeWord = !isWholeWord;
+              if (searchQuery.trim() && entryFile) {
+                debounceSearch();
+              }
+            }}
           >
             <WholeWordIcon active={isWholeWord} />
           </button>
@@ -203,8 +249,9 @@
           id="include-files"
           type="text" 
           class="vscode-input text-sm"
-          placeholder="例如: *.ts,*.js" 
-          bind:value={includeFiles}
+          placeholder="例如: /path/to/file.ts" 
+          bind:value={entryFile}
+          on:input={handleEntryFileChange}
         />
       </div>
       <!-- <div class="relative">
@@ -323,5 +370,13 @@
   
   .icon-button:hover {
     background-color: var(--vscode-list-hoverBackground);
+  }
+  
+  /* 匹配高亮样式 */
+  .match-highlight {
+    background-color: rgba(255, 200, 0, 0.3);
+    color: var(--vscode-foreground);
+    border-radius: 2px;
+    font-weight: bold;
   }
 </style>
