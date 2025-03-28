@@ -3,17 +3,17 @@ import path from 'path';
 import fs from 'fs';
 import { logger } from '.';
 import depseeker from '@nsea/depseeker'
-import { type DepSeeker } from '@nsea/depseeker';
+import { type DepSeekerResult } from '@nsea/depseeker';
 
 export default class DependencyParser {
     private maxDepth: number = 5;
-    private cache: Map<string, DepSeeker> = new Map();
+    private cache: Map<string, DepSeekerResult> = new Map();
 
     constructor(maxDepth: number = 5) {
         this.maxDepth = maxDepth;
     }
 
-    async parseDependencies(uri: Uri, level: number = 0): Promise<DepSeeker> {
+    async parseDependencies(uri: Uri, level: number = 0): Promise<DepSeekerResult> {
         const filePath = uri.fsPath;
         // 检查缓存
         if (this.cache.has(filePath)) {
