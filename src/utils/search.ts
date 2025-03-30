@@ -29,7 +29,7 @@ export async function searchInFilesWithRipgrep(
 
     // 获取工作区根目录
     let cwd: string;
-    
+
     // 尝试获取 URI 所属的工作区
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(sourceUri);
     if (workspaceFolder) {
@@ -42,6 +42,7 @@ export async function searchInFilesWithRipgrep(
 
     // 检查 ripgrep 二进制文件是否存在
     const rgExists = await existsAsync(rgPath);
+    logger.info(`ripgrep 二进制文件路径: ${rgPath}...`);
     if (!rgExists) {
         logger.warn(`ripgrep 二进制文件不存在: ${rgPath}，尝试手动安装...`);
         try {
@@ -51,7 +52,7 @@ export async function searchInFilesWithRipgrep(
             await execAsync(`cd "${rgpkgPath}" && node ./lib/postinstall.js --force`);
             logger.info('ripgrep 二进制文件安装成功');
         } catch (error) {
-            logger.error('安装 ripgrep 二进制文件失败:', error);
+            logger.info('安装 ripgrep 二进制文件失败,使用 node 搜索');
             // 如果安装失败，使用 Node.js 实现的搜索
             return await searchWithNodeJs(files, queryString, options, cwd);
         }
@@ -60,23 +61,23 @@ export async function searchInFilesWithRipgrep(
     // 构造 ripgrep 命令
     const escapeShell = (cmd: string) => cmd.replace(/(["\s'$`\\])/g, '\\$1');
     const safeQuery = escapeShell(queryString);
-    
+    logger.info(`ripgrep 搜索命令: ${safeQuery}...`);
     // 处理文件路径 - 将相对路径转换为绝对路径
-    const absoluteFiles = files.map(file => {
+    const absoluteFiles = files.map((file) => {
         if (path.isAbsolute(file)) {
             return file;
         }
         return path.join(cwd, file);
     });
-    
+
     // 使用绝对路径作为搜索目标
-    const filesArgs = absoluteFiles.map(file => `"${escapeShell(file)}"`).join(' ');
-    
+    const filesArgs = absoluteFiles.map((file) => `"${escapeShell(file)}"`).join(' ');
+
     const caseFlag = options.isCaseSensitive ? '' : '-i'; // 大小写敏感
     const wordFlag = options.isWholeWord ? '-w' : ''; // 全字匹配
-    
+
     const execString = `"${rgPath}" --no-messages --vimgrep -H --column --line-number --color never ${caseFlag} ${wordFlag} -e "${safeQuery}" ${filesArgs}`;
-    
+
     try {
         const {stdout, stderr} = await execAsync(execString, {
             cwd,
@@ -108,7 +109,7 @@ export async function searchInFilesWithRipgrep(
 
         return results;
     } catch (error) {
-        logger.error('Ripgrep search failed:', error);
+        logger.info('Ripgrep search failed, falling back to Node.js implementation...');
         // 如果 ripgrep 搜索失败，使用 Node.js 实现的搜索
         return await searchWithNodeJs(files, queryString, options, cwd);
     }
@@ -122,7 +123,7 @@ async function searchWithNodeJs(
     cwd: string
 ): Promise<SearchMatch[]> {
     const readFileAsync = promisify(fs.readFile);
-    
+
     // 创建正则表达式
     let flags = options.isCaseSensitive ? 'g' : 'gi';
     let pattern = options.isWholeWord ? `\\b${escapeRegExp(queryString)}\\b` : escapeRegExp(queryString);
@@ -131,7 +132,7 @@ async function searchWithNodeJs(
     const results: SearchMatch[] = [];
 
     // 处理文件路径 - 将相对路径转换为绝对路径
-    const absoluteFiles = files.map(file => {
+    const absoluteFiles = files.map((file) => {
         if (path.isAbsolute(file)) {
             return file;
         }
@@ -156,10 +157,10 @@ async function searchWithNodeJs(
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 let match;
-                
+
                 // 重置正则表达式的 lastIndex
                 regex.lastIndex = 0;
-                
+
                 while ((match = regex.exec(line)) !== null) {
                     results.push({
                         filePath,

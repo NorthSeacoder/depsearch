@@ -20,7 +20,7 @@ export default class DependencyParser {
             return this.cache.get(filePath)!;
         }
         const tsConfig = await this.findTsconfig(filePath);
-        logger.info('tsConfig', tsConfig);
+        logger.info('parseDependencies-cache', JSON.stringify(this.cache));
         // 解析 tsconfig.json
 
         const options = {
