@@ -1,6 +1,6 @@
 # DepSearch
 
-![icon](res/icon.svg)  
+![icon](res/icon.png)  
 A Visual Studio Code extension for searching within your project's dependency tree.  
 一款用于在项目依赖树中进行搜索的 Visual Studio Code 扩展。
 
