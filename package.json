@@ -7,7 +7,7 @@
     "packageManager": "pnpm@10.4.1",
     "description": "",
     "author": "Northseacoder",
-    "license": "MIT",
+    "license": "WTFPL",
     "homepage": "https://github.com/Northseacoder/depsearch#readme",
     "repository": {
         "type": "git",
