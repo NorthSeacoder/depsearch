@@ -7,7 +7,24 @@ import { rgPath } from '@vscode/ripgrep'
 import * as vscode from 'vscode'
 import { logger } from '.'
 
-const execAsync = promisify(exec)
+const execAsync = promisify(exec);
+const existsAsync = promisify(fs.exists);
+
+interface SearchMatch {
+    filePath: string;
+    lineNumber: number;
+    column: number;
+    matchText: string;
+    range: vscode.Range; // 用于跳转
+}
+interface SearchMatchTree {
+    filePath: string;
+    lineNumber: number;
+    column: number;
+    matchText: string;
+    range: vscode.Range; // 用于跳转
+    children: SearchMatchTree[];
+}
 
 /**
  * Search for a query string across multiple files using ripgrep
@@ -144,50 +161,64 @@ async function searchWithNodeJs(
   options: SearchOptions,
   cwd: string,
 ): Promise<SearchMatch[]> {
-  const flags = options.isCaseSensitive ? 'g' : 'gi'
-  const pattern = options.isWholeWord ? `\\b${escapeRegExp(queryString)}\\b` : escapeRegExp(queryString)
-  const regex = new RegExp(pattern, flags)
-
-  const results: SearchMatch[] = []
+    const readFileAsync = promisify(fs.readFile);
+    logger.info('使用 Node.js 搜索', queryString);
+    // 创建正则表达式
+    let flags = options.isCaseSensitive ? 'g' : 'gi';
+    let pattern = options.isWholeWord ? `\\b${escapeRegExp(queryString)}\\b` : escapeRegExp(queryString);
+    const regex = new RegExp(pattern, flags);
 
   const absoluteFiles = files.map(file =>
     path.isAbsolute(file) ? file : path.join(cwd, file),
   )
 
-  for (const filePath of absoluteFiles) {
-    try {
-      const exists = await fileExists(filePath)
-      if (!exists) {
-        logger.warn(`File not found: ${filePath}`)
-        continue
-      }
+    // 处理文件路径 - 将相对路径转换为绝对路径
+    const absoluteFiles = files.map((file) => {
+        if (path.isAbsolute(file)) {
+            return file;
+        }
+        return path.join(cwd, file);
+    });
+    logger.info('搜索的文件:', absoluteFiles.length);
+    // 搜索每个文件
+    for (const filePath of absoluteFiles) {
+        try {
+            // 检查文件是否存在
+            const exists = await existsAsync(filePath);
+            if (!exists) {
+                logger.warn(`文件不存在: ${filePath}`);
+                continue;
+            }
 
-      const content = await fs.readFile(filePath, 'utf-8')
-      const lines = content.split('\n')
+            // 读取文件内容
+            const content = await readFileAsync(filePath, 'utf-8');
+            const lines = content.split('\n');
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        regex.lastIndex = 0 // Reset regex state
+            // 搜索每一行
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                let match;
 
-        let match = regex.exec(line)
-        while (match !== null) {
-          results.push({
-            filePath,
-            lineNumber: i + 1, // 1-based line number
-            column: match.index + 1, // 1-based column number
-            matchText: line,
-            range: new vscode.Range(i, match.index, i, match.index + match[0].length),
-          })
-          match = regex.exec(line)
+                // 重置正则表达式的 lastIndex
+                regex.lastIndex = 0;
+
+                while ((match = regex.exec(line)) !== null) {
+                    results.push({
+                        filePath,
+                        lineNumber: i + 1, // 1-based 行号
+                        column: match.index + 1, // 1-based 列号
+                        matchText: line,
+                        range: new vscode.Range(i, match.index, i, match.index + match[0].length)
+                    });
+                }
+            }
+        } catch (error) {
+            logger.error(`搜索文件时出错 ${filePath}:`, error);
         }
       }
     }
-    catch (error) {
-      logger.error(`Error searching file ${filePath}:`, error)
-    }
-  }
-
-  return results
+    logger.info('搜索到的结果:', results);
+    return results;
 }
 
 /**
@@ -208,4 +239,91 @@ async function fileExists(filePath: string): Promise<boolean> {
   catch {
     return false
   }
+}
+
+/**
+ * 将搜索结果转换为树形结构
+ * @param searchResults 搜索结果数组
+ * @param dependencies 依赖关系对象
+ * @returns 树形结构的搜索结果
+ */
+export function buildSearchMatchTree(
+    searchResults: SearchMatch[],
+    dependencies: Record<string, string[]>
+): SearchMatchTree[] {
+    // 按文件路径分组搜索结果
+    const resultsByFile = new Map<string, SearchMatch[]>();
+    searchResults.forEach(result => {
+        // 遍历依赖对象的键，找到匹配的路径
+        const matchedPath = Object.keys(dependencies).find(depPath => 
+            result.filePath.endsWith(depPath)
+        );
+        
+        if (matchedPath) {
+            if (!resultsByFile.has(matchedPath)) {
+                resultsByFile.set(matchedPath, []);
+            }
+            resultsByFile.get(matchedPath)!.push(result);
+        }
+    });
+
+    logger.info('ResultsByFile:', Object.fromEntries(resultsByFile));
+
+    // 构建反向依赖图（被谁依赖）
+    const reverseDeps = new Map<string, string[]>();
+    Object.entries(dependencies).forEach(([file, deps]) => {
+        deps.forEach(dep => {
+            if (!reverseDeps.has(dep)) {
+                reverseDeps.set(dep, []);
+            }
+            reverseDeps.get(dep)!.push(file);
+        });
+    });
+
+    logger.info('ReverseDeps:', Object.fromEntries(reverseDeps));
+
+    // 递归构建树节点
+    function buildTreeNode(filePath: string, visited = new Set<string>()): SearchMatchTree[] {
+        logger.info('Building tree for:', filePath);
+        if (visited.has(filePath)) {
+            logger.info('Circular dependency detected:', filePath);
+            return []; // 防止循环依赖
+        }
+        visited.add(filePath);
+
+        const fileResults = resultsByFile.get(filePath) || [];
+        const dependentFiles = reverseDeps.get(filePath) || [];
+        
+        logger.info('FileResults for', filePath, ':', fileResults.length);
+        logger.info('DependentFiles for', filePath, ':', dependentFiles);
+
+        const results = fileResults.map(result => {
+            const children: SearchMatchTree[] = [];
+            dependentFiles.forEach(depFile => {
+                children.push(...buildTreeNode(depFile, new Set(visited)));
+            });
+
+            return {
+                filePath: result.filePath,
+                lineNumber: result.lineNumber,
+                column: result.column,
+                matchText: result.matchText,
+                range: result.range,
+                children
+            };
+        });
+
+        logger.info('Results for', filePath, ':', results.length);
+        return results;
+    }
+
+    // 从有搜索结果的文件开始构建树
+    const tree: SearchMatchTree[] = [];
+    for (const [filePath] of resultsByFile) {
+        logger.info('Processing file with results:', filePath);
+        tree.push(...buildTreeNode(filePath));
+    }
+
+    logger.info('Final tree size:', tree.length);
+    return tree;
 }
