@@ -26,15 +26,102 @@ interface SearchMatchTree {
     children: SearchMatchTree[];
 }
 
-/**
- * Search for a query string across multiple files using ripgrep
- * Falls back to Node.js implementation if ripgrep is unavailable
- */
+// 用于获取和缓存有效的ripgrep路径
+let cachedRgPath: string | null = null;
+async function getValidRgPath(): Promise<string | null> {
+    // 如果已经有缓存的有效路径，直接返回
+    if (cachedRgPath) {
+        return cachedRgPath;
+    }
+
+    // 首先检查@vscode/ripgrep提供的路径
+    if (await existsAsync(rgPath)) {
+        cachedRgPath = rgPath;
+        return cachedRgPath;
+    }
+
+    // 尝试在扩展目录中查找rg
+    const extensionDir = path.resolve(__dirname, '..');
+    const candidatePaths = [
+        // 扩展目录中的bin目录
+        path.join(extensionDir, 'bin', 'rg'),
+        // node_modules中的rg
+        path.join(extensionDir, 'node_modules', '@vscode', 'ripgrep', 'bin', 'rg'),
+        // 在PATH中查找rg
+        'rg' 
+    ];
+
+    // 在macOS和Linux上，尝试使用which命令查找rg
+    if (process.platform !== 'win32') {
+        try {
+            const { stdout } = await execAsync('which rg', { maxBuffer: 5 * 1024 * 1024 });
+            if (stdout.trim()) {
+                candidatePaths.push(stdout.trim());
+            }
+        } catch (error) {
+            logger.info('which rg命令失败，跳过');
+        }
+    }
+
+    // 检查每个候选路径
+    for (const candidatePath of candidatePaths) {
+        try {
+            if (candidatePath === 'rg') {
+                // 对于PATH中的rg，尝试运行版本命令验证
+                await execAsync('rg --version', { maxBuffer: 5 * 1024 * 1024 });
+                cachedRgPath = 'rg'; // 使用命令名称而不是路径
+                return cachedRgPath;
+            } else if (await existsAsync(candidatePath)) {
+                // 验证找到的rg是否可执行
+                await execAsync(`"${candidatePath}" --version`, { maxBuffer: 5 * 1024 * 1024 });
+                cachedRgPath = candidatePath;
+                return cachedRgPath;
+            }
+        } catch (error) {
+            logger.info(`验证路径失败 ${candidatePath}: ${error}`);
+            continue;
+        }
+    }
+
+    // 尝试安装ripgrep
+    try {
+        // 尝试找到postinstall.js脚本
+        let postinstallPath = null;
+        const potentialPostinstallPaths = [
+            path.join(path.dirname(path.dirname(rgPath)), 'lib', 'postinstall.js'),
+            path.join(extensionDir, 'node_modules', '@vscode', 'ripgrep', 'lib', 'postinstall.js')
+        ];
+
+        for (const potentialPath of potentialPostinstallPaths) {
+            if (fs.existsSync(potentialPath)) {
+                postinstallPath = potentialPath;
+                break;
+            }
+        }
+
+        if (postinstallPath) {
+            logger.info(`尝试通过postinstall脚本安装ripgrep: ${postinstallPath}`);
+            await execAsync(`node "${postinstallPath}" --force`, { maxBuffer: 5 * 1024 * 1024 });
+            
+            // 安装后再次检查rgPath
+            if (await existsAsync(rgPath)) {
+                cachedRgPath = rgPath;
+                return cachedRgPath;
+            }
+        }
+    } catch (error) {
+        logger.error(`安装ripgrep失败: ${error}`);
+    }
+
+    // 所有尝试都失败了
+    return null;
+}
+
 export async function searchInFilesWithRipgrep(
-  files: string[],
-  queryString: string,
-  options: SearchOptions,
-  sourceUri: vscode.Uri,
+    files: string[],
+    queryString: string,
+    options: {isCaseSensitive: boolean; isWholeWord: boolean; exclusions?: string},
+    sourceUri: vscode.Uri // 必需参数，不再是可选的
 ): Promise<SearchMatch[]> {
   if (!files.length) {
     logger.warn('No files provided for search')
@@ -60,14 +147,98 @@ export async function searchInFilesWithRipgrep(
     }
   }
 
-  try {
-    return await searchWithRipgrep(files, queryString, options, cwd)
-  }
-  catch (error) {
-    logger.error('Ripgrep search failed:', error)
-    logger.info('Falling back to Node.js implementation')
-    return await searchWithNodeJs(files, queryString, options, cwd)
-  }
+    // 获取工作区根目录
+    let cwd: string;
+
+    // 尝试获取 URI 所属的工作区
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(sourceUri);
+    if (workspaceFolder) {
+        // 如果 URI 属于工作区，使用工作区路径
+        cwd = workspaceFolder.uri.fsPath;
+    } else {
+        // 如果 URI 不属于任何工作区，使用其所在目录作为工作目录
+        cwd = path.dirname(sourceUri.fsPath);
+    }
+
+    // 获取有效的ripgrep路径
+    const effectiveRgPath = await getValidRgPath();
+    if (!effectiveRgPath) {
+        logger.info('找不到有效的ripgrep路径，使用Node.js搜索');
+        return await searchWithNodeJs(files, queryString, options, cwd);
+    }
+    
+    logger.info(`使用ripgrep路径: ${effectiveRgPath}`);
+
+    // 构造 ripgrep 命令
+    const escapeShell = (cmd: string) => cmd.replace(/(["\s'$`\\])/g, '\\$1');
+    const safeQuery = escapeShell(queryString);
+    logger.info(`ripgrep 搜索命令: ${safeQuery}...`);
+    // 处理文件路径 - 将相对路径转换为绝对路径
+    const absoluteFiles = files.map((file) => {
+        if (path.isAbsolute(file)) {
+            return file;
+        }
+        return path.join(cwd, file);
+    });
+
+    // 使用绝对路径作为搜索目标
+    const filesArgs = absoluteFiles.map((file) => `"${escapeShell(file)}"`).join(' ');
+
+    const caseFlag = options.isCaseSensitive ? '' : '-i'; // 大小写敏感
+    const wordFlag = options.isWholeWord ? '-w' : ''; // 全字匹配
+    
+    // 处理排除参数
+    let excludeFlags = '';
+    if (options.exclusions) {
+        const exclusionPatterns = options.exclusions.split(',').map(pattern => pattern.trim());
+        excludeFlags = exclusionPatterns.map(pattern => `--glob=!${escapeShell(pattern)}`).join(' ');
+    }
+
+    // 根据不同的路径格式构造命令
+    let execString = '';
+    if (effectiveRgPath === 'rg') {
+        // 使用PATH中的rg
+        execString = `rg --no-messages --vimgrep -H --column --line-number --color never ${caseFlag} ${wordFlag} ${excludeFlags} -e "${safeQuery}" ${filesArgs}`;
+    } else {
+        // 使用完整路径
+        execString = `"${effectiveRgPath}" --no-messages --vimgrep -H --column --line-number --color never ${caseFlag} ${wordFlag} ${excludeFlags} -e "${safeQuery}" ${filesArgs}`;
+    }
+
+    try {
+        const {stdout, stderr} = await execAsync(execString, {
+            cwd,
+            maxBuffer: 10 * 1024 * 1024 // 增加到10MB缓冲区，防止大型搜索结果溢出
+        });
+
+        if (stderr) {
+            logger.error('Ripgrep stderr:', stderr);
+        }
+
+        // 解析 ripgrep 输出（格式：file:line:column:match）
+        const results = stdout
+            .trim()
+            .split('\n')
+            .filter((line) => line)
+            .map((line) => {
+                const [filePath, lineNumber, column, ...matchParts] = line.split(':');
+                const matchText = matchParts.join(':').trim();
+                const lineNum = parseInt(lineNumber, 10) - 1; // 转换为 0-based
+                const colNum = parseInt(column, 10) - 1; // 转换为 0-based
+                return {
+                    filePath,
+                    lineNumber: lineNum + 1, // 返回 1-based 行号
+                    column: colNum + 1, // 返回 1-based 列号
+                    matchText,
+                    range: new vscode.Range(lineNum, colNum, lineNum, colNum + matchText.length)
+                };
+            });
+
+        return results;
+    } catch (error) {
+        logger.info(`Ripgrep search failed, falling back to Node.js implementation...,${JSON.stringify(error)}`);
+        // 如果 ripgrep 搜索失败，使用 Node.js 实现的搜索
+        return await searchWithNodeJs(files, queryString, options, cwd);
+    }
 }
 
 /**
@@ -156,10 +327,10 @@ function parseRipgrepOutput(output: string): SearchMatch[] {
  * Search using pure Node.js implementation (fallback)
  */
 async function searchWithNodeJs(
-  files: string[],
-  queryString: string,
-  options: SearchOptions,
-  cwd: string,
+    files: string[],
+    queryString: string,
+    options: {isCaseSensitive: boolean; isWholeWord: boolean; exclusions?: string},
+    cwd: string
 ): Promise<SearchMatch[]> {
     const readFileAsync = promisify(fs.readFile);
     logger.info('使用 Node.js 搜索', queryString);
@@ -179,6 +350,21 @@ async function searchWithNodeJs(
         }
         return path.join(cwd, file);
     });
+    
+    // 处理排除模式
+    const exclusionPatterns: RegExp[] = [];
+    if (options.exclusions) {
+        const patterns = options.exclusions.split(',').map(pattern => pattern.trim());
+        patterns.forEach(pattern => {
+            // 将glob模式转换为正则表达式
+            const regexPattern = pattern
+                .replace(/\./g, '\\.')
+                .replace(/\*/g, '.*')
+                .replace(/\?/g, '.');
+            exclusionPatterns.push(new RegExp(`^${regexPattern}$`));
+        });
+    }
+    
     logger.info('搜索的文件:', absoluteFiles.length);
     // 搜索每个文件
     for (const filePath of absoluteFiles) {
@@ -187,6 +373,15 @@ async function searchWithNodeJs(
             const exists = await existsAsync(filePath);
             if (!exists) {
                 logger.warn(`文件不存在: ${filePath}`);
+                continue;
+            }
+            
+            // 检查文件是否应该被排除
+            const relativePath = path.relative(cwd, filePath);
+            if (exclusionPatterns.some(pattern => 
+                pattern.test(relativePath) || pattern.test(path.basename(filePath))
+            )) {
+                logger.info(`文件被排除: ${filePath}`);
                 continue;
             }
 
@@ -217,7 +412,6 @@ async function searchWithNodeJs(
         }
       }
     }
-    logger.info('搜索到的结果:', results);
     return results;
 }
 
@@ -294,8 +488,7 @@ export function buildSearchMatchTree(
         const fileResults = resultsByFile.get(filePath) || [];
         const dependentFiles = reverseDeps.get(filePath) || [];
         
-        logger.info('FileResults for', filePath, ':', fileResults.length);
-        logger.info('DependentFiles for', filePath, ':', dependentFiles);
+        logger.info('FileResults for', filePath, ':', fileResults.length, dependentFiles.length);
 
         const results = fileResults.map(result => {
             const children: SearchMatchTree[] = [];

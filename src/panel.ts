@@ -17,6 +17,7 @@ export class SvelteViewProvider implements WebviewViewProvider {
         isCaseSensitive?: boolean;
         isWholeWord?: boolean;
         entryFile?: string;
+        exclusions?: string;
     } = {}; // 保存所有状态
     private messageQueue: Payload[] = []; // 消息队列
     private isWebviewReady = false; // webview是否就绪
@@ -192,6 +193,7 @@ export class SvelteViewProvider implements WebviewViewProvider {
                             // 创建 URI
                             const uri = vscode.Uri.file(message.entryFile);
 
+<<<<<<< HEAD
       // Update state after successful search
       this.updateState({
         searchQuery: message.query,
@@ -199,6 +201,73 @@ export class SvelteViewProvider implements WebviewViewProvider {
         isWholeWord: message.isWholeWord,
         entryFile: message.entryFile,
       })
+=======
+                            // 调用搜索命令
+                            await vscode.commands.executeCommand('depsearch.search', {
+                                uri,
+                                query: message.query,
+                                isCaseSensitive: message.isCaseSensitive || false,
+                                isWholeWord: message.isWholeWord || false,
+                                exclusions: message.exclusions 
+                            });
+                            this.lastState = {
+                                importResults: message.importResults,
+                                searchQuery: message.query,
+                                isCaseSensitive: message.isCaseSensitive,
+                                isWholeWord: message.isWholeWord,
+                                entryFile: message.entryFile,
+                                exclusions: message.exclusions
+                            };
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : '搜索执行失败';
+                            vscode.window.showErrorMessage(errorMessage);
+                            this.post({
+                                title: 'searchError',
+                                msg: errorMessage
+                            });
+                        }
+                    } else {
+                        const errorMsg = !message.entryFile ? '请先选择一个入口文件' : '请输入搜索关键词';
+
+                        vscode.window.showWarningMessage(errorMsg);
+                        this.post({
+                            title: 'searchError',
+                            msg: errorMsg
+                        });
+                    }
+                    break;
+
+                case 'openFile':
+                    // 打开文件
+                    if (message.filePath && typeof message.lineNumber === 'number') {
+                        try {
+                            const uri = vscode.Uri.file(message.filePath);
+                            const document = await vscode.workspace.openTextDocument(uri);
+
+                            // 打开文档并跳转到指定行
+                            const editor = await vscode.window.showTextDocument(document);
+
+                            // 行号从 1 开始，需要减 1 转为 0 开始
+                            const lineNumber = Math.max(0, message.lineNumber - 1);
+                            const line = document.lineAt(lineNumber);
+
+                            // 选择整行
+                            editor.selection = new vscode.Selection(lineNumber, 0, lineNumber, line.text.length);
+
+                            // 滚动到可见区域
+                            editor.revealRange(
+                                new vscode.Range(lineNumber, 0, lineNumber, 0),
+                                vscode.TextEditorRevealType.InCenter
+                            );
+                        } catch (error) {
+                            const errorMessage = error instanceof Error ? error.message : '无法打开文件';
+                            vscode.window.showErrorMessage(`打开文件失败: ${errorMessage}`);
+                        }
+                    }
+                    break;
+            }
+        });
+>>>>>>> 343b724 (feat: loading 交互修复)
     }
     catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索执行失败'

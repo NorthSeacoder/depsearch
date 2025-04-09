@@ -15,8 +15,19 @@ import {WEBVIEW_VIEW_ID} from './constants';
 export const { activate, deactivate } = defineExtension((context) => {
   executeCommand('setContext', 'depsearch.supportedExts', ['.js', '.ts', '.jsx', '.tsx'])
 
+<<<<<<< HEAD
   const provider = new SvelteViewProvider(context.extensionUri)
   context.subscriptions.push(window.registerWebviewViewProvider(WEBVIEW_VIEW_ID, provider))
+=======
+// 定义搜索参数接口
+interface SearchParams {
+    uri: Uri;
+    query?: string;
+    isCaseSensitive?: boolean;
+    isWholeWord?: boolean;
+    exclusions?: string;
+}
+>>>>>>> 343b724 (feat: loading 交互修复)
 
   // 创建依赖解析器
   const parser = new DependencyParser()
@@ -54,8 +65,8 @@ export const { activate, deactivate } = defineExtension((context) => {
         },
         'depsearch.search': async (params: SearchParams) => {
             try {
-                const {uri, query, isCaseSensitive = false, isWholeWord = false} = params;
-                logger.info('搜索参数:', JSON.stringify({uri, query, isCaseSensitive, isWholeWord}));
+                const {uri, query, isCaseSensitive = false, isWholeWord = false, exclusions} = params;
+                logger.info('搜索参数:', JSON.stringify({params}));
                 if (!uri) {
                     throw new Error('未提供文件 URI');
                 }
@@ -73,10 +84,9 @@ export const { activate, deactivate } = defineExtension((context) => {
                 const files = root.getFiles();  
                 // 执行搜索
                 logger.info('开始搜索', query, {isCaseSensitive, isWholeWord});
-                const results = await searchInFilesWithRipgrep(files, query, {isCaseSensitive, isWholeWord}, uri);
+                const results = await searchInFilesWithRipgrep(files, query, {isCaseSensitive, isWholeWord, exclusions}, uri);
                 logger.info('搜索到的结果:');
                 const searchMatchTree = buildSearchMatchTree(results, root.obj());
-                logger.info('搜索到的结果:',JSON.stringify(results),JSON.stringify(searchMatchTree));
                 // 清除状态消息
                 statusMessage.dispose();
 

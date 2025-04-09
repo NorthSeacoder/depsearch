@@ -9,4 +9,5 @@ export interface Payload {
     lineNumber?: number;
     importResults?: any[];
     treeResults?: any[];
+    exclusions?: string;
   }
