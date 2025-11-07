@@ -2,16 +2,16 @@
   "compilerOptions": {
     "target": "es2017",
     "lib": ["esnext", "DOM"],
+    "baseUrl": ".",
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "types": ["vscode-webview", "svelte"],
     "strict": true,
     "strictNullChecks": true,
     "esModuleInterop": true,
     "skipDefaultLibCheck": true,
-    "skipLibCheck": true,
-    "types": ["vscode-webview","svelte"],
-    "baseUrl": "."
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }

@@ -16,5 +16,5 @@ export default defineConfig({
   external: [
     'vscode',
   ],
-  noExternal: ['@nsea/depseeker','@vscode/ripgrep'],
+  noExternal: ['@nsea/depseeker', '@vscode/ripgrep'],
 })
