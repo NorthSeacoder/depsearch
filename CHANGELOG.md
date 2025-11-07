@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated vitest from ^1.4.0 to ^2.1.8
 - Added @vitest/coverage-v8 for test coverage
 - Added prettier ^3.4.2 for code formatting
+- Added cross-env ^7.0.3 for cross-platform script support
 - All other dependencies updated to latest stable versions
 
 ## [0.0.4] - 2024-11-07
