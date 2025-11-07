@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Better handling of missing tsconfig.json files
 - Improved error messages for better user experience
 - Fixed workspace folder detection for better project support
+- Fixed build script to correctly bundle extension code with tsup
 
 ### Dependencies
 - Updated vitest from ^1.4.0 to ^2.1.8

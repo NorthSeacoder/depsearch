@@ -80,10 +80,11 @@
   "scripts": {
     "cz": "git add . && git-cz",
     "clean": "rimraf dist webview/dist coverage",
-    "build": "pnpm clean && concurrently \"NODE_ENV=production pnpm -r --filter '.' run bundle\" \"pnpm -r --filter view build\"",
+    "build": "pnpm clean && concurrently \"NODE_ENV=production pnpm bundle\" \"pnpm --filter view build\"",
     "bundle": "tsup",
+    "bundle:watch": "tsup --watch",
     "build:webview": "pnpm --filter view build",
-    "dev": "concurrently \"NODE_ENV=development pnpm bundle --watch\" \"pnpm --filter view build --watch\"",
+    "dev": "concurrently \"NODE_ENV=development pnpm bundle:watch\" \"pnpm --filter view build --watch\"",
     "prepare": "pnpm update:metadata",
     "update:metadata": "vscode-ext-gen --output src/generated/meta.ts",
     "lint": "eslint .",

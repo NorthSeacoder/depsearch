@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
-    include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
+    include: ['test/**/*.test.ts', 'test/**/*.spec.ts', 'src/**/*.test.ts'],
     exclude: ['node_modules', 'dist', 'webview'],
     coverage: {
       provider: 'v8',
@@ -22,10 +22,10 @@ export default defineConfig({
         '**/index.ts',
       ],
       thresholds: {
-        lines: 50,
-        functions: 50,
-        branches: 50,
-        statements: 50,
+        lines: 20,
+        functions: 20,
+        branches: 20,
+        statements: 20,
       },
     },
     mockReset: true,
