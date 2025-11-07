@@ -92,7 +92,7 @@
     "format": "prettier --check \"**/*.{ts,tsx,svelte,js,json,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,svelte,js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "vscode:prepublish": "pnpm build",
@@ -106,7 +106,6 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.1",
-    "@antfu/ni": "^23.3.1",
     "@types/node": "^22.13.4",
     "@types/vscode": "^1.90.0",
     "@vitest/coverage-v8": "^2.1.8",
