@@ -1,126 +1,135 @@
 {
-    "publisher": "Northseacoder",
-    "name": "depsearch",
-    "displayName": "DepSearch",
-    "version": "0.0.4",
-    "private": true,
-    "packageManager": "pnpm@10.4.1",
-    "description": "",
-    "author": "Northseacoder",
-    "license": "WTFPL",
-    "homepage": "https://github.com/Northseacoder/depsearch#readme",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Northseacoder/depsearch"
-    },
-    "bugs": {
-        "url": "https://github.com/Northseacoder/depsearch/issues"
-    },
-    "categories": [
-        "Other"
-    ],
-    "main": "./dist/index.js",
-    "icon": "res/icon.png",
-    "files": [
-        "LICENSE.md",
-        "dist/*",
-        "res/*",
-        "webview/dist/*"
-    ],
-    "engines": {
-        "vscode": "^1.90.0"
-    },
-    "activationEvents": [
-        "onStartupFinished"
-    ],
-    "contributes": {
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "depsearch-explorer",
-                    "title": "DepSearch",
-                    "icon": "res/icon.svg"
-                }
-            ]
-        },
-        "views": {
-            "depsearch-explorer": [
-                {
-                    "icon": "",
-                    "id": "depsearchConfigView",
-                    "type": "webview",
-                    "name": "搜索"
-                }
-            ]
-        },
-        "commands": [
-            {
-                "command": "depsearch.search",
-                "title": "DepSearch",
-                "category": "DepSearch",
-                "icon": "$(search)"
-            },
-            {
-                "command": "depsearch.openWebview",
-                "title": "DepSearch: 分析依赖",
-                "category": "DepSearch",
-                "icon": "$(references)"
-            }
-        ],
-        "menus": {
-            "explorer/context": [
-                {
-                    "command": "depsearch.openWebview",
-                    "group": "navigation",
-                    "when": "explorerResourceIsFolder || resourceExtname in depsearch.supportedExts"
-                }
-            ]
+  "publisher": "Northseacoder",
+  "name": "depsearch",
+  "displayName": "DepSearch",
+  "version": "0.0.4",
+  "private": true,
+  "packageManager": "pnpm@10.4.1",
+  "description": "Search within dependency trees. Analyze JS/TS dependencies and find terms across the entire dependency chain.",
+  "author": "Northseacoder",
+  "license": "WTFPL",
+  "homepage": "https://github.com/Northseacoder/depsearch#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Northseacoder/depsearch"
+  },
+  "bugs": {
+    "url": "https://github.com/Northseacoder/depsearch/issues"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/index.js",
+  "icon": "res/icon.png",
+  "files": [
+    "LICENSE.md",
+    "dist/*",
+    "res/*",
+    "webview/dist/*"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "depsearch-explorer",
+          "title": "DepSearch",
+          "icon": "res/icon.svg"
         }
+      ]
     },
-    "scripts": {
-        "cz": "git add . && git-cz",
-        "clear": "rimraf dist",
-        "build": "nr clear && concurrently \"env NODE_ENV=production tsup\" \"nr -F view build\"",
-        "build:view": "nr -F view build",
-        "dev": "concurrently \"env NODE_ENV=development nr build --watch\" \"nr -F view build --watch\"",
-        "prepare": "nr update",
-        "update": "vscode-ext-gen --output src/generated/meta.ts",
-        "lint": "eslint . --fix",
-        "vscode:prepublish": "nr build",
-        "publish": "vsce publish --no-dependencies",
-        "pack": "vsce package --no-dependencies",
-        "test": "vitest",
-        "typecheck": "tsc --noEmit",
-        "release": "bumpp && nr publish"
-    },
-    "devDependencies": {
-        "@antfu/eslint-config": "^4.2.1",
-        "@antfu/ni": "^23.3.1",
-        "@types/node": "^22.13.4",
-        "@types/vscode": "^1.90.0",
-        "@vscode/codicons": "^0.0.36",
-        "@vscode/vsce": "^3.2.2",
-        "bumpp": "^10.0.3",
-        "commitizen": "^4.3.1",
-        "concurrently": "^9.1.2",
-        "cz-conventional-changelog": "^3.3.0",
-        "eslint": "^9.20.1",
-        "esno": "^4.8.0",
-        "pnpm": "^10.4.1",
-        "reactive-vscode": "^0.2.10",
-        "rimraf": "^6.0.1",
-        "tsup": "^8.3.6",
-        "typescript": "^5.7.3",
-        "vitest": "^1.4.0",
-        "vscode-ext-gen": "^0.1.0"
-    },
-    "config": {
-        "commitizen": {
-            "path": "cz-conventional-changelog"
+    "views": {
+      "depsearch-explorer": [
+        {
+          "icon": "",
+          "id": "depsearchConfigView",
+          "type": "webview",
+          "name": "搜索"
         }
+      ]
     },
-    "dependencies": {
-        "@nsea/depseeker": "^0.0.4",
-        "@vscode/ripgrep": "^1.15.11"
+    "commands": [
+      {
+        "command": "depsearch.search",
+        "title": "DepSearch",
+        "category": "DepSearch",
+        "icon": "$(search)"
+      },
+      {
+        "command": "depsearch.openWebview",
+        "title": "DepSearch: 分析依赖",
+        "category": "DepSearch",
+        "icon": "$(references)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "depsearch.openWebview",
+          "group": "navigation",
+          "when": "explorerResourceIsFolder || resourceExtname in depsearch.supportedExts"
+        }
+      ]
     }
+  },
+  "scripts": {
+    "cz": "git add . && git-cz",
+    "clean": "rimraf dist webview/dist coverage",
+    "build": "pnpm clean && concurrently \"pnpm bundle\" \"pnpm --filter view build\"",
+    "bundle": "cross-env NODE_ENV=production tsup",
+    "bundle:watch": "cross-env NODE_ENV=development tsup --watch",
+    "build:webview": "pnpm --filter view build",
+    "dev": "concurrently \"pnpm bundle:watch\" \"pnpm --filter view build --watch\"",
+    "prepare": "pnpm update:metadata",
+    "update:metadata": "vscode-ext-gen --output src/generated/meta.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check \"**/*.{ts,tsx,svelte,js,json,md}\"",
+    "format:fix": "prettier --write \"**/*.{ts,tsx,svelte,js,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "vscode:prepublish": "pnpm build",
+    "publish": "vsce publish --no-dependencies",
+    "pack": "vsce package --no-dependencies",
+    "release": "bumpp && pnpm publish"
+  },
+  "dependencies": {
+    "@nsea/depseeker": "^0.0.4",
+    "@vscode/ripgrep": "^1.15.11"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.2.1",
+    "@types/node": "^22.13.4",
+    "@types/vscode": "^1.90.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vscode/codicons": "^0.0.36",
+    "@vscode/vsce": "^3.2.2",
+    "bumpp": "^10.0.3",
+    "commitizen": "^4.3.1",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^9.20.1",
+    "esno": "^4.8.0",
+    "pnpm": "^10.4.1",
+    "prettier": "^3.4.2",
+    "reactive-vscode": "^0.2.10",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "vscode-ext-gen": "^0.1.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
 }

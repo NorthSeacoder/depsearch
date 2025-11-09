@@ -1,9 +1,10 @@
-import './app.css';
-import { mount } from 'svelte';
-import App from './App.svelte';
+import { mount } from 'svelte'
+import App from './App.svelte'
+import './app.css'
 
-const target = document.getElementById('app');
-if (!target) throw new Error('Webview目标元素#app未找到');
-const app = mount(App, { target });
+const target = document.getElementById('app')
+if (!target)
+  throw new Error('Webview目标元素#app未找到')
+const app = mount(App, { target })
 
-export default app;
+export default app

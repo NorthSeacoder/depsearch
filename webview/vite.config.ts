@@ -1,7 +1,8 @@
-// webview/vite.config.ts
-import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
-import path from 'path';
+import path from 'node:path'
+import process from 'node:process'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+import tsConfig from './tsconfig.json'
 
 export default defineConfig({
   plugins: [svelte()],
@@ -24,6 +25,6 @@ export default defineConfig({
     cssCodeSplit: false,
   },
   esbuild: {
-    tsconfigRaw: require('./tsconfig.json'),
+    tsconfigRaw: tsConfig,
   },
-});
+})

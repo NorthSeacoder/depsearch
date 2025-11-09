@@ -1,5 +1,4 @@
-export const WEBVIEW_VIEW_ID = 'depsearchConfigView';
-export const WEBVIEW_DIST_PATH = 'webview/dist';
-export const INDEX_JS = 'index.js';
-export const INDEX_CSS = 'index.css';
-export const EXTENSION_SCOPE = 'depsearch';
+export const WEBVIEW_VIEW_ID = 'depsearchConfigView'
+export const WEBVIEW_DIST_PATH = 'webview/dist'
+export const INDEX_JS = 'index.js'
+export const INDEX_CSS = 'index.css'
