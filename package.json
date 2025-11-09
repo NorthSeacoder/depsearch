@@ -86,7 +86,7 @@
     "build:webview": "pnpm --filter view build",
     "dev": "concurrently \"pnpm bundle:watch\" \"pnpm --filter view build --watch\"",
     "prepare": "pnpm update:metadata",
-    "update:metadata": "node scripts/update-metadata.js",
+    "update:metadata": "vscode-ext-gen --output src/generated/meta.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check \"**/*.{ts,tsx,svelte,js,json,md}\"",

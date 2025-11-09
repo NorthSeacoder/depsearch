@@ -10,7 +10,7 @@ lib-cov
 logs
 node_modules
 temp
-src/generated
+src/generated/meta.ts
 prd
 webview/dist
 .vscode-test
