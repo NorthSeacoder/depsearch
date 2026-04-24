@@ -81,12 +81,36 @@ interface SearchParams {
                 // 解析依赖
                 logger.info('开始解析依赖', getRelativePath(uri));
                 const root = await parser.parseDependencies(uri);
-                const files = root.getFiles();  
-                // 执行搜索
+                const files = root.getFiles();
+                
+                // 执行搜索，添加进度回调
                 logger.info('开始搜索', query, {isCaseSensitive, isWholeWord});
-                const results = await searchInFilesWithRipgrep(files, query, {isCaseSensitive, isWholeWord, exclusions}, uri);
+                
+                // 创建进度回调函数
+                const progressCallback = (current: number, total: number, status?: string) => {
+                    provider.post({
+                        title: 'searchProgress',
+                        progress: {
+                            current,
+                            total,
+                            status
+                        }
+                    });
+                };
+                
+                // 初始化进度
+                progressCallback(0, files.length, '初始化搜索...');
+                
+                const results = await searchInFilesWithRipgrep(
+                    files, 
+                    query, 
+                    {isCaseSensitive, isWholeWord, exclusions}, 
+                    uri,
+                    progressCallback
+                );
+                
                 logger.info('搜索到的结果:');
-                const searchMatchTree = buildSearchMatchTree(results, root.obj());
+                const searchMatchTree = buildSearchMatchTree(results, root.obj(), uri);
                 // 清除状态消息
                 statusMessage.dispose();
 

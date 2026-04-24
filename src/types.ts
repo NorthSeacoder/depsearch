@@ -10,4 +10,9 @@ export interface Payload {
     importResults?: any[];
     treeResults?: any[];
     exclusions?: string;
+    progress?: {
+      current: number;
+      total: number;
+      status?: string;
+    };
   }

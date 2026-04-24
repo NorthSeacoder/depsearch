@@ -19,6 +19,7 @@
     let entryFile = '';
     let searchTimeout: number | null = null;
     let expandedFiles: Record<string, boolean> = {};
+    let searchProgress = { current: 0, total: 0, percent: 0, status: '' };
 
     onMount(() => {
         window.addEventListener('message', (event: MessageEvent) => {
@@ -54,6 +55,17 @@
                     isWholeWord = message.isWholeWord || false;
                     entryFile = message.entryFile || '';
                     isSearching = false;
+                    break;
+                case 'searchProgress':
+                    if (message.progress) {
+                        const { current, total, status } = message.progress;
+                        searchProgress = {
+                            current,
+                            total,
+                            percent: total > 0 ? Math.round((current / total) * 100) : 0,
+                            status: status || `处理文件 ${current}/${total}`
+                        };
+                    }
                     break;
             }
         });
@@ -194,10 +206,23 @@
     <div class="results-container">
         <div class="space-y-2 pl-2">
             {#if isSearching}
-                <div class="flex justify-center py-8">
+                <div class="flex flex-col items-center py-8">
                     <div
                         class="w-8 h-8 border-4 border-vscode-button-bg border-t-transparent rounded-full animate-spin"
                     ></div>
+                    {#if searchProgress.total > 0}
+                        <div class="mt-4 text-xs text-center">
+                            <div class="progress-bar">
+                                <div 
+                                    class="progress-fill" 
+                                    style="width: {searchProgress.percent}%"
+                                ></div>
+                            </div>
+                            <div class="mt-2">
+                                {searchProgress.status} ({searchProgress.percent}%)
+                            </div>
+                        </div>
+                    {/if}
                 </div>
             {:else if fileGroups.length === 0}
                 <p class="text-center py-8 text-vscode-description">无搜索结果或尚未搜索</p>
@@ -302,9 +327,26 @@
     }
 
     .match-highlight {
-        background-color: rgba(255, 200, 0, 0.3);
+        background-color: rgba(255, 200, 0, 0.5);
         color: var(--vscode-foreground);
         border-radius: 2px;
         font-weight: bold;
+        padding: 0 2px;
+        margin: 0 -2px;
+    }
+
+    .progress-bar {
+        width: 200px;
+        height: 6px;
+        background-color: var(--vscode-progressBar-background);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0 auto;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background-color: var(--vscode-progressBar-foreground);
+        transition: width 0.3s ease;
     }
 </style>
